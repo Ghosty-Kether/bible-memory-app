@@ -172,6 +172,7 @@
       <select id="sel-book"></select>
       <select id="sel-chapter"></select>
       <select id="sel-verse"></select>
+      <button class="btn primary" id="btn-bible-start">Start</button>
     </div>
   </div>
 </main>
@@ -587,7 +588,7 @@ selChapter.addEventListener('change', ()=>{
   const b = parseInt(selBook.value,10), c = parseInt(selChapter.value,10);
   populateVerses(b,c); selVerse.value = 0;
 });
-selVerse.addEventListener('change', ()=>{
+document.getElementById('btn-bible-start').addEventListener('click', ()=>{
   const b = parseInt(selBook.value,10), c = parseInt(selChapter.value,10), v = parseInt(selVerse.value,10);
   openVerse(b,c,v,{tab:'bible'});
 });
