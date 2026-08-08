@@ -29,3 +29,17 @@ Since this is a single static HTML file, you can also enable **GitHub Pages** fo
 
 - App code: MIT — do whatever you like with it.
 - Bible text: [World English Bible](https://worldenglish.bible/), public domain.
+
+
+## Windows .exe (built automatically)
+
+This repo has a GitHub Actions workflow that builds a Windows installer on every push
+to `main` — no need to install Node.js or run any commands yourself:
+
+1. Go to the **Actions** tab on GitHub.
+2. Open the latest **Build Windows App** run (or click **Run workflow** to trigger one manually).
+3. Once it finishes (a few minutes), open it and download the **Bible-Memory-Windows**
+   artifact from the bottom of the page — it contains the installer `.exe`.
+
+Since the app isn't code-signed, Windows SmartScreen may warn it's from an unknown
+publisher the first time you run the installer — click "More info" → "Run anyway".
