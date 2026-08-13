@@ -1,0 +1,9 @@
+{
+  "appId": "com.josephlim.biblememory",
+  "appName": "Bible Memory",
+  "webDir": "www",
+  "backgroundColor": "#f7f2e9",
+  "android": {
+    "backgroundColor": "#f7f2e9"
+  }
+}

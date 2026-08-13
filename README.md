@@ -43,3 +43,20 @@ to `main` — no need to install Node.js or run any commands yourself:
 
 Since the app isn't code-signed, Windows SmartScreen may warn it's from an unknown
 publisher the first time you run the installer — click "More info" → "Run anyway".
+
+
+## Android app (built automatically)
+
+Like the Windows build, there's a GitHub Actions workflow that builds an installable
+Android APK on every push to `main` — no Android Studio or SDK needed on your end:
+
+1. Go to the **Actions** tab on GitHub.
+2. Open the latest **Build Android App** run (or click **Run workflow** to trigger one manually).
+3. Once it finishes, download the **Bible-Memory-Android** artifact — it contains
+   `app-debug.apk`.
+4. Copy the APK to your phone and open it to install. You'll need to allow "install
+   from unknown sources" for whichever app you use to open it (Files, Chrome, etc.) —
+   Android will prompt you for this the first time.
+
+This is a debug-signed build, meant for installing on your own device. Publishing to the
+Play Store would need a proper release signing key, which is a separate step if you ever want it.
