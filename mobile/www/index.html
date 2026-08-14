@@ -211,6 +211,7 @@
     <div id="practice-success" hidden class="banner good" style="margin-top:16px;margin-bottom:0;"></div>
     <div class="btn-row">
       <button class="btn" id="btn-restart">Restart</button>
+      <button class="btn" id="btn-next-verse" hidden>Next verse &rarr;</button>
       <button class="btn" id="btn-next-due" hidden>Next due verse &rarr;</button>
     </div>
   </div>
@@ -537,6 +538,14 @@ function advanceReviewQueue(){
   cur = {b,c,v};
   startPractice({fromQueue:true});
 }
+function practiceNextVerse(){
+  reviewQueue = null;
+  let {b,c,v} = cur;
+  v += 1;
+  if (v >= BIBLE[b].chapters[c].length){ v = 0; c += 1; if (c >= BIBLE[b].chapters.length){ b += 1; if (b>=BIBLE.length) return; c = 0; } }
+  cur = {b,c,v};
+  startPractice({mode: practiceMode});
+}
 
 /* ---------- verse detail ---------- */
 function openVerse(b,c,v,opts){
@@ -626,6 +635,7 @@ function normalizeWord(s){ return (s||'').toLowerCase().replace(/[^a-z0-9']/g,''
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 let practiceMode = 'letter';
+let practiceFromQueue = false;
 function startPractice(opts){
   opts = opts || {};
   practiceMode = opts.mode === 'full' ? 'full' : 'letter';
@@ -635,7 +645,9 @@ function startPractice(opts){
   practicePointer = 0;
   document.getElementById('practice-ref').textContent = `${BIBLE[b].name} ${c+1}:${v+1}${practiceMode==='full' ? ' \u2014 Mastery Test' : ''}`;
   document.getElementById('practice-success').hidden = true;
-  document.getElementById('btn-next-due').hidden = !opts.fromQueue;
+  document.getElementById('btn-next-due').hidden = true;
+  document.getElementById('btn-next-verse').hidden = true;
+  practiceFromQueue = !!opts.fromQueue;
   typer.classList.toggle('wide', practiceMode === 'full');
   typer.maxLength = practiceMode === 'full' ? 40 : 4;
   document.getElementById('typer-label').textContent = practiceMode === 'full'
@@ -660,6 +672,8 @@ function finishPractice(){
   recordSuccess(b,c,v);
   const entry = myVerses[pkey(b,c,v)];
   document.getElementById('practice-success').hidden = false;
+  document.getElementById('btn-next-verse').hidden = false;
+  document.getElementById('btn-next-due').hidden = !practiceFromQueue;
   if (practiceMode === 'full') {
     entry.mastered = true;
     saveMyVerses();
@@ -710,6 +724,8 @@ function submitFullWord(){
 document.getElementById('view-practice').addEventListener('click', focusTyper);
 document.getElementById('btn-restart').addEventListener('click', ()=>{
   practicePointer = 0; document.getElementById('practice-success').hidden = true;
+  document.getElementById('btn-next-verse').hidden = true;
+  document.getElementById('btn-next-due').hidden = true;
   typer.classList.toggle('wide', practiceMode === 'full');
   renderPractice(); focusTyper();
 });
@@ -719,6 +735,7 @@ document.getElementById('btn-practice-back').addEventListener('click', ()=>{
   else openVerse(cur.b, cur.c, cur.v, {tab:activeTab});
 });
 document.getElementById('btn-next-due').addEventListener('click', advanceReviewQueue);
+document.getElementById('btn-next-verse').addEventListener('click', practiceNextVerse);
 
 /* ---------- settings view ---------- */
 function renderSettings(){
