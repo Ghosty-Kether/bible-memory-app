@@ -9,6 +9,7 @@
     --bg:#f7f2e9; --panel:#ffffff; --ink:#2b2620; --sub:#7a7061;
     --accent:#9c7b4f; --accent-dark:#7c6039; --accent-light:#efe6d3;
     --good:#3f7a4f; --good-bg:#e6f3e8; --border:#e8e0d1; --blank:#cabfa8; --danger:#a9542f;
+    --star:#b8892e; --star-bg:#faf1de;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;padding-bottom:76px;}
@@ -43,7 +44,7 @@
   .vrow:last-child{border-bottom:none;}
   .vrow:active{background:var(--accent-light);}
   .vcheck{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px;border:2px solid var(--blank);}
-  .vcheck.mastered{background:var(--good-bg);border-color:var(--good);color:var(--good);}
+  .vcheck.mastered{background:var(--star-bg);border-color:var(--star);color:var(--star);}
   .vcheck .icon{width:13px;height:13px;stroke-width:3;}
   .vbody{flex:1;min-width:0;}
   .vtop{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
@@ -96,6 +97,7 @@
   #typer:focus{outline:none;box-shadow:0 0 0 3px var(--accent-light);}
   .typer-row{display:flex;align-items:center;gap:10px;margin-top:18px;}
   .typer-row label{font-size:13px;color:var(--sub);}
+  #typer.wide{width:180px;text-transform:none;text-align:left;padding:0 12px;font-size:18px;}
   .stepdots{display:flex;gap:6px;margin-top:14px;}
   .stepdot{width:8px;height:8px;border-radius:50%;background:var(--border);}
   .stepdot.filled{background:var(--accent);}
@@ -185,6 +187,7 @@
     <div class="verse-text" id="verse-text"></div>
     <div class="btn-row">
       <button class="btn primary" id="btn-practice">Practice this verse</button>
+      <button class="btn" id="btn-master">Master this verse</button>
       <button class="btn" id="btn-toggle-collection">Add to My Verses</button>
     </div>
     <div class="btn-row">
@@ -203,7 +206,7 @@
     <div class="practice-words" id="practice-words"></div>
     <div class="typer-row">
       <input id="typer" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" maxlength="4" placeholder="_">
-      <label for="typer">Tap the box, then type the first letter of the highlighted word</label>
+      <label for="typer" id="typer-label">Tap the box, then type the first letter of the highlighted word</label>
     </div>
     <div id="practice-success" hidden class="banner good" style="margin-top:16px;margin-bottom:0;"></div>
     <div class="btn-row">
@@ -294,6 +297,19 @@ if (!settings.reviewedToday) settings.reviewedToday = { date: null, count: 0 };
 })();
 
 function saveMyVerses(){ try { localStorage.setItem(MYVERSES_KEY, JSON.stringify(myVerses)); } catch(e){} }
+
+// grandfather in verses that were "mastered" under the old reviewCount>=5 definition
+(function migrateMasteryFlag(){
+  let changed = false;
+  for (const key in myVerses) {
+    const entry = myVerses[key];
+    if (entry.mastered === undefined) {
+      entry.mastered = (entry.reviewCount||0) >= 5;
+      changed = true;
+    }
+  }
+  if (changed) saveMyVerses();
+})();
 function saveSettings(){ try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch(e){} }
 function saveAll(){ saveMyVerses(); saveSettings(); }
 window.addEventListener('beforeunload', saveAll);
@@ -343,7 +359,7 @@ function addToMyVerses(b,c,v){
 }
 function removeFromMyVerses(b,c,v){ delete myVerses[pkey(b,c,v)]; saveMyVerses(); }
 function isDue(entry){ return new Date(entry.nextReview) <= new Date(); }
-function isMastered(entry){ return (entry.reviewCount||0) >= 5; }
+function isMastered(entry){ return entry.mastered === true; }
 function recordSuccess(b,c,v){
   const entry = addToMyVerses(b,c,v);
   entry.reviewCount = (entry.reviewCount||0) + 1;
@@ -443,7 +459,7 @@ function verseRowHtml(entry, r){
   const mastered = isMastered(entry);
   const due = isDue(entry);
   return `<div class="vrow" data-key="${pkey(r.b,r.c,r.v)}">
-    <div class="vcheck ${mastered?'mastered':''}">${mastered?'<svg class="icon" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>':''}</div>
+    <div class="vcheck ${mastered?'mastered':''}">${mastered?'<svg class="icon" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>':''}</div>
     <div class="vbody">
       <div class="vtop">
         <span class="vref">${r.name} ${r.chapter}:${r.verse}<span class="vtag">WEB</span></span>
@@ -535,7 +551,7 @@ function openVerse(b,c,v,opts){
   toggleBtn.classList.toggle('danger', inCollection);
   if (inCollection) {
     const entry = myVerses[pkey(b,c,v)];
-    document.getElementById('verse-meta').textContent = `${isMastered(entry)?'Mastered · ':''}${dueInText(entry)} · ${cadenceText(entry)}`;
+    document.getElementById('verse-meta').textContent = `${isMastered(entry)?'\u2605 Mastered · ':''}${dueInText(entry)} · ${cadenceText(entry)}`;
   } else {
     document.getElementById('verse-meta').textContent = 'Not in your list yet.';
   }
@@ -560,7 +576,8 @@ function stepVerse(dir){
 document.getElementById('btn-prev').addEventListener('click', ()=>stepVerse(-1));
 document.getElementById('btn-next').addEventListener('click', ()=>stepVerse(1));
 document.getElementById('btn-verse-back').addEventListener('click', ()=> showView(activeTab, {tab:activeTab}));
-document.getElementById('btn-practice').addEventListener('click', ()=> startPractice());
+document.getElementById('btn-practice').addEventListener('click', ()=> startPractice({mode:'letter'}));
+document.getElementById('btn-master').addEventListener('click', ()=> startPractice({mode:'full'}));
 document.getElementById('btn-toggle-collection').addEventListener('click', ()=>{
   const {b,c,v} = cur;
   if (isInCollection(b,c,v)) removeFromMyVerses(b,c,v); else addToMyVerses(b,c,v);
@@ -577,7 +594,9 @@ function populateChapters(bIdx){ selChapter.innerHTML = BIBLE[bIdx].chapters.map
 function populateVerses(bIdx,cIdx){
   selVerse.innerHTML = BIBLE[bIdx].chapters[cIdx].map((t,i)=>{
     const inCol = isInCollection(bIdx,cIdx,i);
-    return `<option value="${i}">Verse ${i+1}${inCol?' ✓':''}</option>`;
+    const mastered = inCol && isMastered(myVerses[pkey(bIdx,cIdx,i)]);
+    const mark = mastered ? ' \u2605' : (inCol ? ' \u2713' : '');
+    return `<option value="${i}">Verse ${i+1}${mark}</option>`;
   }).join('');
 }
 selBook.addEventListener('change', ()=>{
@@ -603,17 +622,25 @@ const typer = document.getElementById('typer');
 function tokenize(text){ return text.split(/\s+/).filter(Boolean); }
 function firstLetter(token){ const m = token.match(/[A-Za-z]/); return m ? m[0] : null; }
 function blankFor(token){ return '_'.repeat(token.length); }
+function normalizeWord(s){ return (s||'').toLowerCase().replace(/[^a-z0-9']/g,''); }
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+let practiceMode = 'letter';
 function startPractice(opts){
   opts = opts || {};
+  practiceMode = opts.mode === 'full' ? 'full' : 'letter';
   const {b,c,v} = cur;
   const text = BIBLE[b].chapters[c][v];
   practiceTokens = tokenize(text);
   practicePointer = 0;
-  document.getElementById('practice-ref').textContent = `${BIBLE[b].name} ${c+1}:${v+1}`;
+  document.getElementById('practice-ref').textContent = `${BIBLE[b].name} ${c+1}:${v+1}${practiceMode==='full' ? ' \u2014 Mastery Test' : ''}`;
   document.getElementById('practice-success').hidden = true;
   document.getElementById('btn-next-due').hidden = !opts.fromQueue;
+  typer.classList.toggle('wide', practiceMode === 'full');
+  typer.maxLength = practiceMode === 'full' ? 40 : 4;
+  document.getElementById('typer-label').textContent = practiceMode === 'full'
+    ? 'Type the whole word, then press space or enter'
+    : 'Tap the box, then type the first letter of the highlighted word';
   renderPractice();
   showView('practice', {tab: opts.fromQueue ? 'review' : activeTab});
   focusTyper();
@@ -627,32 +654,64 @@ function renderPractice(){
   document.getElementById('practice-words').innerHTML = html;
 }
 function focusTyper(){ typer.value=''; typer.focus(); }
+function finishPractice(){
+  renderPractice();
+  const {b,c,v} = cur;
+  recordSuccess(b,c,v);
+  const entry = myVerses[pkey(b,c,v)];
+  document.getElementById('practice-success').hidden = false;
+  if (practiceMode === 'full') {
+    entry.mastered = true;
+    saveMyVerses();
+    document.getElementById('practice-success').textContent = `\u2605 Verse mastered! Next review ${dueInText(entry).toLowerCase()}.`;
+  } else {
+    document.getElementById('practice-success').textContent = `Nicely done — next review ${dueInText(entry).toLowerCase()}.`;
+  }
+  renderAll();
+}
+function flashWrong(){
+  const el = document.getElementById('cur-word');
+  if (el){ el.classList.add('wrong'); setTimeout(()=>el.classList.remove('wrong'),300); }
+}
 typer.addEventListener('input', ()=>{
   if (practicePointer >= practiceTokens.length){ typer.value=''; return; }
-  const val = typer.value; typer.value = '';
-  if (!val) return;
-  const ch = val[val.length-1];
-  const tok = practiceTokens[practicePointer];
-  const need = firstLetter(tok);
-  if (need === null) { practicePointer++; }
-  else if (ch.toLowerCase() === need.toLowerCase()) { practicePointer++; }
-  else {
-    const el = document.getElementById('cur-word');
-    if (el){ el.classList.add('wrong'); setTimeout(()=>el.classList.remove('wrong'),300); }
+  if (practiceMode === 'letter') {
+    const val = typer.value; typer.value = '';
+    if (!val) return;
+    const ch = val[val.length-1];
+    const tok = practiceTokens[practicePointer];
+    const need = firstLetter(tok);
+    if (need === null) { practicePointer++; }
+    else if (ch.toLowerCase() === need.toLowerCase()) { practicePointer++; }
+    else { flashWrong(); return; }
+    if (practicePointer >= practiceTokens.length) { finishPractice(); } else { renderPractice(); }
+  } else {
+    // full-word mode: submit on trailing space, keep typing otherwise
+    if (!typer.value.endsWith(' ')) return;
+    submitFullWord();
   }
-  if (practicePointer >= practiceTokens.length){
-    renderPractice();
-    const {b,c,v} = cur;
-    recordSuccess(b,c,v);
-    const entry = myVerses[pkey(b,c,v)];
-    document.getElementById('practice-success').hidden = false;
-    document.getElementById('practice-success').textContent = `Nicely done — next review ${dueInText(entry).toLowerCase()}.`;
-    renderAll();
-  } else { renderPractice(); }
 });
+typer.addEventListener('keydown', (e)=>{
+  if (practiceMode === 'full' && e.key === 'Enter') {
+    e.preventDefault();
+    submitFullWord();
+  }
+});
+function submitFullWord(){
+  if (practicePointer >= practiceTokens.length){ typer.value=''; return; }
+  const attempt = normalizeWord(typer.value);
+  typer.value = '';
+  if (!attempt) return;
+  const tok = practiceTokens[practicePointer];
+  if (normalizeWord(tok) === attempt) { practicePointer++; }
+  else { flashWrong(); return; }
+  if (practicePointer >= practiceTokens.length) { finishPractice(); } else { renderPractice(); }
+}
 document.getElementById('view-practice').addEventListener('click', focusTyper);
 document.getElementById('btn-restart').addEventListener('click', ()=>{
-  practicePointer = 0; document.getElementById('practice-success').hidden = true; renderPractice(); focusTyper();
+  practicePointer = 0; document.getElementById('practice-success').hidden = true;
+  typer.classList.toggle('wide', practiceMode === 'full');
+  renderPractice(); focusTyper();
 });
 document.getElementById('btn-practice-back').addEventListener('click', ()=>{
   reviewQueue = null;
