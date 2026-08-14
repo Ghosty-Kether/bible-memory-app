@@ -153,6 +153,7 @@
 
 <!-- REVIEW -->
 <main id="view-review" hidden>
+  <div class="card" id="review-mastery-card"></div>
   <button class="btn primary block" id="btn-review-all" style="margin-bottom:12px;">Review all due verses</button>
   <div class="card">
     <div class="row between">
@@ -446,15 +447,14 @@ function renderHome(){
   const refs = allCollectionRefs();
   const mastered = refs.filter(r => isMastered(myVerses[pkey(r.b,r.c,r.v)])).length;
   const due = dueRefs().length;
-  document.getElementById('home-myverses-sub').textContent = `${mastered} of ${TOTAL_VERSES} mastered · ${due} due`;
+  document.getElementById('home-myverses-sub').textContent = `${mastered} of ${refs.length} mastered · ${due} due`;
   document.getElementById('home-review-sub').textContent = due > 0 ? `${due} verse${due>1?'s':''} ready to review` : 'Nothing due right now';
-  const pct = TOTAL_VERSES ? Math.round(mastered/TOTAL_VERSES*1000)/10 : 0;
-  document.getElementById('home-progress-card').innerHTML = `
-    <div class="stat-big">${mastered} / ${TOTAL_VERSES}</div>
+  const pct = refs.length ? Math.round(mastered/refs.length*100) : 0;
+  document.getElementById('home-progress-card').innerHTML = refs.length ? `
+    <div class="stat-big">${mastered} / ${refs.length}</div>
     <div class="stat-label">verses mastered</div>
     <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-    ${refs.length === 0 ? '<div class="stat-label" style="margin-top:10px;">Add verses from the Bible tab to start building your memory list.</div>' : ''}
-  `;
+  ` : `<div class="empty-note">Add verses from the Bible tab to start building your memory list.</div>`;
   renderTabBadge();
 }
 
@@ -479,8 +479,8 @@ function renderMyVerses(){
   const mastered = refs.filter(r => isMastered(myVerses[pkey(r.b,r.c,r.v)])).length;
   const due = dueRefs().length;
   document.getElementById('myverses-summary').innerHTML = `
-    <div class="stat-big">${mastered} <span style="font-size:16px;color:var(--sub);font-weight:600;">of ${TOTAL_VERSES} mastered</span></div>
-    <div class="stat-label">${due} due for review · ${refs.length} in your list</div>`;
+    <div class="stat-big">${mastered} <span style="font-size:16px;color:var(--sub);font-weight:600;">of ${refs.length} mastered</span></div>
+    <div class="stat-label">${due} due for review</div>`;
   const list = document.getElementById('myverses-list');
   if (refs.length === 0) {
     list.innerHTML = `<div class="empty-note">No verses yet. Go to the Bible tab, open a verse, and tap "Add to My Verses".</div>`;
@@ -497,6 +497,12 @@ function renderMyVerses(){
 
 /* ---------- Review ---------- */
 function renderReview(){
+  const allMastered = Object.keys(myVerses).filter(k => isMastered(myVerses[k])).length;
+  const masteryPct = TOTAL_VERSES ? Math.round(allMastered/TOTAL_VERSES*1000)/10 : 0;
+  document.getElementById('review-mastery-card').innerHTML = `
+    <div class="stat-big">${allMastered} <span style="font-size:16px;color:var(--sub);font-weight:600;">/ ${TOTAL_VERSES} mastered</span></div>
+    <div class="stat-label">across the whole Bible</div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${masteryPct}%"></div></div>`;
   const due = dueRefs(), up = upcomingRefs();
   document.getElementById('review-due-count').textContent = due.length;
   document.getElementById('review-updated-count').textContent = up.length;
